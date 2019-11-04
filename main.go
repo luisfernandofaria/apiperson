@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -117,7 +118,7 @@ func main() {
 	router.HandleFunc("/person/{id}/contact", buscarContato).Methods("GET")
 	router.HandleFunc("/person/{id}/contact", criarContato).Methods("POST")
 	router.HandleFunc("/person/{id}/contact", alterarContato).Methods("PUT")
-	router.HandleFunc("/person/{id}/contact", atualizarContado).Methods("PATCH")
+	router.HandleFunc("/person/{id}/contact", atualizarContato).Methods("PATCH")
 	router.HandleFunc("/person/{id}/contact", deletarContato).Methods("DELETE")
 
 	http.ListenAndServe(":5000", router)
@@ -153,9 +154,30 @@ func buscarContato(response http.ResponseWriter, request *http.Request) {
 func alterarContato(response http.ResponseWriter, request *http.Request) {
 
 }
-func atualizarContado(response http.ResponseWriter, request *http.Request) {
+func atualizarContato(contact Contact, personID string) {
 
+	doc := db.Collection(COLLECTION).FindOneAndUpdate(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.String("id", personID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				bson.EC.String("address.city", contact.City),
+				bson.EC.String("address.state", contact.State),
+				bson.EC.String("phone.ddd", contact.Ddd),
+				bson.EC.String("phone.number", contact.Number),
+		),
+		nil)
+	fmt.Println(doc)
 }
 func deletarContato(response http.ResponseWriter, request *http.Request) {
+	var contact Contact
+	_ = json.NewDecoder(r.Body).Decode(&contact)
+
+	_, err := db.Collection(COLLECTION).DeleteOne(context.Background(), contact, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }
