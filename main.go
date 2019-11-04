@@ -57,7 +57,7 @@ func readPerson(response http.ResponseWriter, request *http.Request) {
 	collection := client.Database(DATABASE).Collection(COLLECTION)
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 
-	personID := mux.Vars(request)["_id"]
+	personID := mux.Vars(request)["id"]
 	if len(personID) == 0 {
 		retrivePerson(ctx, collection, response, request)
 	} else {
@@ -125,46 +125,37 @@ func main() {
 
 func criarContato(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("content-type", "application/json")
-	var person Person
-	_ = json.NewDecoder(request.Body).Decode(&person)
+	var contato Contact
+	_ = json.NewDecoder(request.Body).Decode(&contato)
 	collection := client.Database(DATABASE).Collection(COLLECTION)
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	result, _ := collection.InsertOne(ctx, person)
+	result, _ := collection.InsertOne(ctx, contato)
 	json.NewEncoder(response).Encode(result)
 }
 
-func buscarContato(personID string, response http.ResponseWriter, request *http.Request) {
+func buscarContato(response http.ResponseWriter, request *http.Request) {
 
-	id, _ := primitive.ObjectIDFromHex(personID)
-	var person Person
+	response.Header().Set("content-type", "application/json")
+	var people []Person
 	collection := client.Database(DATABASE).Collection(COLLECTION)
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	err := collection.FindOne(ctx, Person{ID: id}).Decode(&person)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
-		return
+
+	personID := mux.Vars(request)["id"]
+	if len(personID) == 0 {
+		retrivePerson(ctx, collection, response, request)
+	} else {
+		retriveOnePerson(personID, response, request)
 	}
+
+	json.NewEncoder(response).Encode(people)
 }
 
-func retrivePerson(ctx context.Context, collection *mongo.Collection,
-	response http.ResponseWriter, request *http.Request) {
-	var people []Person
-	cursor, err := collection.Find(ctx, bson.M{})
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
-		return
-	}
-	defer cursor.Close(ctx)
-	for cursor.Next(ctx) {
-		var person Person
-		cursor.Decode(&person)
-		people = append(people, person)
-	}
-	if err := cursor.Err(); err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
-		return
-	}
+func alterarContato(response http.ResponseWriter, request *http.Request) {
+
+}
+func atualizarContado(response http.ResponseWriter, request *http.Request) {
+
+}
+func deletarContato(response http.ResponseWriter, request *http.Request) {
+
 }
